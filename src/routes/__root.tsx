@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { Toaster } from "sonner";
+import { CartSheet } from "@/components/CartSheet";
 
 function NotFoundComponent() {
   return (
@@ -72,11 +74,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Novalia — Loja Online" },
+      { name: "description", content: "Catálogo curado com checkout simples e rápido. Compre online sem WhatsApp." },
+      { name: "author", content: "Novalia" },
+      { property: "og:title", content: "Novalia — Loja Online" },
+      { property: "og:description", content: "Catálogo curado com checkout simples e rápido." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -114,6 +116,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <CartSheet />
+      <Toaster position="top-right" richColors />
     </QueryClientProvider>
   );
 }
