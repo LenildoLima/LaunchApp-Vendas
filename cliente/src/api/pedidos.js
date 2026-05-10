@@ -30,9 +30,7 @@ export async function createPedido(pedidoData, itens) {
       .from('pedidos')
       .insert([{
         numero_pedido: numeroPedido,
-        cliente_nome: pedidoData.cliente_nome,
-        cliente_telefone: pedidoData.cliente_telefone,
-        cliente_endereco: pedidoData.cliente_endereco,
+        cliente_id: pedidoData.cliente_id,
         observacoes_cliente: pedidoData.observacoes || '',
         status: 'Pendente',
         subtotal: pedidoData.subtotal || 0,

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/store/cart";
+import { useAuth } from "@/store/auth";
 
 export function Header() {
   const count = useCart((s) => s.count());
   const open = useCart((s) => s.open);
   const [mounted, setMounted] = useState(false);
+  const user = useAuth((s) => s.user);
 
   useEffect(() => {
     setMounted(true);
@@ -24,19 +26,41 @@ export function Header() {
           </span>
         </Link>
 
-        <button
-          onClick={open}
-          className="relative flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-accent hover:text-accent"
-          aria-label="Abrir carrinho"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          <span className="hidden sm:inline">Carrinho</span>
-          {mounted && count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs font-bold text-accent-foreground">
-              {count}
-            </span>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <Link
+              to="/perfil"
+              className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-accent hover:text-accent"
+            >
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || "Perfil"}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-accent hover:text-accent"
+            >
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Entrar</span>
+            </Link>
           )}
-        </button>
+
+          <button
+            onClick={open}
+            className="relative flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-accent hover:text-accent"
+            aria-label="Abrir carrinho"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            <span className="hidden sm:inline">Carrinho</span>
+            {mounted && count > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs font-bold text-accent-foreground">
+                {count}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

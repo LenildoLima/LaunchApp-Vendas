@@ -1,34 +1,36 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, User } from "lucide-react";
 import { z } from "zod";
 import { Header } from "@/components/Header";
 import { formatBRL, useCart } from "@/store/cart";
-import { generateOrderNumber, useOrder } from "@/store/order";
+import { useOrder } from "@/store/order";
 import { toast } from "sonner";
 import { createPedido } from "@/api/pedidos";
+import { useAuth } from "@/store/auth";
+import supabase from "@/api/supabaseClient";
 
 export const Route = createFileRoute("/checkout")({
   component: Checkout,
 });
 
+// Aplica máscara de telefone: (XX) 9XXXX-XXXX
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 const schema = z.object({
-  nome: z.string().trim().min(2, "Informe seu nome").max(100),
   telefone: z
     .string()
-    .trim()
-    .regex(/^\(\d{2}\)\s?9\d{4}-\d{4}$/, "Formato: (XX) 9XXXX-XXXX"),
+    .min(1, "Telefone é obrigatório")
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Informe um telefone válido: (XX) 9XXXX-XXXX"),
   endereco: z.string().trim().min(5, "Informe o endereço").max(200),
   complemento: z.string().trim().max(100).optional().or(z.literal("")),
   observacoes: z.string().trim().max(300).optional().or(z.literal("")),
 });
-
-function maskPhone(v: string) {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 2) return d.length ? `(${d}` : "";
-  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
 
 function Checkout() {
   const navigate = useNavigate();
@@ -37,14 +39,48 @@ function Checkout() {
   const clear = useCart((s) => s.clear);
   const setOrder = useOrder((s) => s.set);
 
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [profile, setProfile] = useState<{
+    nome: string;
+    telefone: string;
+    endereco: string;
+  } | null>(null);
+
   const [form, setForm] = useState({
-    nome: "",
     telefone: "",
     endereco: "",
     complemento: "",
     observacoes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      toast.error("Você precisa estar logado para finalizar o pedido");
+      navigate({ to: "/login" });
+    }
+  }, [user, isAuthLoading, navigate]);
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (user) {
+        const { data } = await supabase
+          .from("clientes")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (data) {
+          setProfile(data);
+          setForm((f) => ({
+            ...f,
+            endereco: data.endereco || "",
+            telefone: data.telefone ? maskPhone(data.telefone) : "",
+          }));
+        }
+      }
+    }
+    loadProfile();
+  }, [user]);
 
   if (items.length === 0) {
     return (
@@ -68,6 +104,8 @@ function Checkout() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     const result = schema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
@@ -77,22 +115,29 @@ function Checkout() {
       return;
     }
     setErrors({});
-    
+
+    // Salva telefone e endereço no banco
+    const telefoneDigits = result.data.telefone.replace(/\D/g, "");
+    await supabase
+      .from("clientes")
+      .update({
+        telefone: telefoneDigits,
+        endereco: result.data.endereco,
+      })
+      .eq("id", user.id);
+
     const pedidoData = {
-      cliente_nome: result.data.nome,
-      cliente_telefone: result.data.telefone,
-      cliente_endereco: result.data.endereco,
-      cliente_complemento: result.data.complemento,
+      cliente_id: user.id,
       observacoes: result.data.observacoes,
       subtotal: subtotal,
       total: subtotal,
     };
 
-    const itens = items.map(item => ({
+    const itens = items.map((item) => ({
       produto_id: item.id,
       quantidade: item.quantidade,
       preco_unitario: item.preco,
-      subtotal: item.preco * item.quantidade
+      subtotal: item.preco * item.quantidade,
     }));
 
     const { data, error } = await createPedido(pedidoData, itens);
@@ -103,10 +148,10 @@ function Checkout() {
     }
 
     setOrder({
-      numero: data.numero_pedido,
+      numero: data.numero_pedido || data.id,
       criadoEm: data.criado_em,
       cliente: {
-        nome: result.data.nome,
+        nome: profile?.nome || user.email?.split("@")[0] || "Cliente",
         telefone: result.data.telefone,
         endereco: result.data.endereco,
         complemento: result.data.complemento || undefined,
@@ -115,25 +160,30 @@ function Checkout() {
       itens: items,
       total: subtotal,
     });
-    
+
     clear();
-    toast.success(`Pedido criado: ${data.numero_pedido}`);
+    toast.success(`Pedido criado: ${data.numero_pedido || "Sucesso"}`);
     navigate({ to: "/sucesso" });
   };
 
-  const field = (name: keyof typeof form, label: string, required = true) => (
+  const field = (
+    name: keyof typeof form,
+    label: string,
+    required = true,
+    placeholder = ""
+  ) => (
     <div>
       <label className="mb-1.5 block text-sm font-medium">
         {label} {required && <span className="text-accent">*</span>}
       </label>
       <input
         value={form[name]}
-        onChange={(e) =>
-          setForm((f) => ({
-            ...f,
-            [name]: name === "telefone" ? maskPhone(e.target.value) : e.target.value,
-          }))
-        }
+        onChange={(e) => {
+          const raw = e.target.value;
+          const val = name === "telefone" ? maskPhone(raw) : raw;
+          setForm((f) => ({ ...f, [name]: val }));
+        }}
+        placeholder={placeholder}
         className={`h-11 w-full rounded-xl border bg-card px-4 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 ${
           errors[name] ? "border-destructive" : ""
         }`}
@@ -143,6 +193,8 @@ function Checkout() {
       )}
     </div>
   );
+
+  if (isAuthLoading) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,11 +212,29 @@ function Checkout() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_400px]">
           <form onSubmit={submit} className="space-y-5 rounded-3xl border bg-card p-6 sm:p-8">
-            <h2 className="font-display text-lg font-semibold">Dados de entrega</h2>
-            {field("nome", "Nome completo")}
-            {field("telefone", "Telefone")}
-            {field("endereco", "Endereço")}
-            {field("complemento", "Complemento", false)}
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+              <User className="w-5 h-5" /> Seus Dados
+            </h2>
+
+            {/* Info do usuário logado */}
+            <div className="p-4 rounded-xl bg-muted/50 border">
+              <p className="font-medium">
+                {profile?.nome || user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+              </p>
+              <p className="text-xs mt-1 text-muted-foreground">
+                Comprando como <strong>{user?.email}</strong>
+              </p>
+            </div>
+
+            {/* Campo Telefone */}
+            {field("telefone", "Telefone", true, "(11) 91234-5678")}
+
+            <h2 className="font-display text-lg font-semibold pt-2 border-t">
+              Endereço de Entrega
+            </h2>
+            {field("endereco", "Endereço Completo", true, "Rua Exemplo, 123 - Bairro")}
+            {field("complemento", "Complemento", false, "Apto 10, bloco B")}
+
             <div>
               <label className="mb-1.5 block text-sm font-medium">
                 Observações
@@ -180,7 +250,7 @@ function Checkout() {
               />
             </div>
 
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row border-t">
               <Link
                 to="/"
                 className="rounded-full border px-6 py-3 text-center text-sm font-medium transition hover:bg-muted"
@@ -196,9 +266,22 @@ function Checkout() {
             </div>
           </form>
 
+          {/* Painel de resumo */}
           <aside className="h-fit rounded-3xl border bg-card p-6 lg:sticky lg:top-24">
             <h2 className="font-display text-lg font-semibold">Resumo</h2>
-            <ul className="mt-4 space-y-3">
+
+            {/* Dados do cliente no resumo */}
+            {(form.telefone || user?.email) && (
+              <div className="mt-3 mb-4 rounded-xl bg-muted/50 border p-3 space-y-0.5 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground text-sm">
+                  {profile?.nome || user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+                </p>
+                {form.telefone && <p>📞 {form.telefone}</p>}
+                {form.endereco && <p>📍 {form.endereco}</p>}
+              </div>
+            )}
+
+            <ul className="mt-2 space-y-3">
               {items.map((i) => (
                 <li key={i.id} className="flex gap-3">
                   <img

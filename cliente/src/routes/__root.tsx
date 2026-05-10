@@ -110,8 +110,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useEffect } from "react";
+import { useAuth } from "@/store/auth";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    useAuth.getState().initialize();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

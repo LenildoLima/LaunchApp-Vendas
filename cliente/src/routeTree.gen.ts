@@ -10,12 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SucessoRouteImport } from './routes/sucesso'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as MeusPedidosRouteImport } from './routes/meus-pedidos'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SucessoRoute = SucessoRouteImport.update({
   id: '/sucesso',
   path: '/sucesso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusPedidosRoute = MeusPedidosRouteImport.update({
+  id: '/meus-pedidos',
+  path: '/meus-pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -32,30 +50,55 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/perfil': typeof PerfilRoute
   '/sucesso': typeof SucessoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/perfil': typeof PerfilRoute
   '/sucesso': typeof SucessoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/perfil': typeof PerfilRoute
   '/sucesso': typeof SucessoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/checkout' | '/sucesso'
+  fullPaths:
+    | '/'
+    | '/checkout'
+    | '/login'
+    | '/meus-pedidos'
+    | '/perfil'
+    | '/sucesso'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/checkout' | '/sucesso'
-  id: '__root__' | '/' | '/checkout' | '/sucesso'
+  to: '/' | '/checkout' | '/login' | '/meus-pedidos' | '/perfil' | '/sucesso'
+  id:
+    | '__root__'
+    | '/'
+    | '/checkout'
+    | '/login'
+    | '/meus-pedidos'
+    | '/perfil'
+    | '/sucesso'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckoutRoute: typeof CheckoutRoute
+  LoginRoute: typeof LoginRoute
+  MeusPedidosRoute: typeof MeusPedidosRoute
+  PerfilRoute: typeof PerfilRoute
   SucessoRoute: typeof SucessoRoute
 }
 
@@ -66,6 +109,27 @@ declare module '@tanstack/react-router' {
       path: '/sucesso'
       fullPath: '/sucesso'
       preLoaderRoute: typeof SucessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-pedidos': {
+      id: '/meus-pedidos'
+      path: '/meus-pedidos'
+      fullPath: '/meus-pedidos'
+      preLoaderRoute: typeof MeusPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -88,6 +152,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckoutRoute: CheckoutRoute,
+  LoginRoute: LoginRoute,
+  MeusPedidosRoute: MeusPedidosRoute,
+  PerfilRoute: PerfilRoute,
   SucessoRoute: SucessoRoute,
 }
 export const routeTree = rootRouteImport

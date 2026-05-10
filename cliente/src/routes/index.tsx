@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -7,12 +7,16 @@ import { ProductDialog } from "@/components/ProductDialog";
 import { CATEGORIES, PRICE_RANGE, type Category, type Product } from "@/data/products";
 import { formatBRL } from "@/store/cart";
 import { getProdutos } from "@/api/produtos";
+import { useAuth } from "@/store/auth";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
+  
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category | "Todas">("Todas");
   const [maxPrice, setMaxPrice] = useState(PRICE_RANGE[1]);
@@ -21,6 +25,12 @@ function Index() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [produtos, setProdutos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/login" });
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const buscar = async () => {
