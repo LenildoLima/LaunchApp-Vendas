@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/store/auth";
 import { useEffect, useState } from "react";
 import supabase from "@/api/supabaseClient";
 import { toast } from "sonner";
-import { LogOut, Save, ShoppingBag } from "lucide-react";
+import { Save } from "lucide-react";
 
 export const Route = createFileRoute("/perfil")({
   component: Perfil,
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/perfil")({
 
 function Perfil() {
   const navigate = useNavigate();
-  const { user, logout, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -32,7 +32,7 @@ function Perfil() {
         .from("clientes")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setNome(data.nome || "");
@@ -59,10 +59,6 @@ function Perfil() {
     setSalvando(false);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate({ to: "/" });
-  };
 
   if (isLoading || !user) {
     return null;
@@ -126,35 +122,6 @@ function Perfil() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <Link
-              to="/meus-pedidos"
-              className="flex w-full items-center gap-3 rounded-2xl border bg-card p-4 transition hover:bg-muted"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-semibold">Meus Pedidos</p>
-                <p className="text-xs text-muted-foreground">
-                  Histórico de compras
-                </p>
-              </div>
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-2xl border bg-card p-4 text-destructive transition hover:bg-muted"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <LogOut className="h-5 w-5" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-semibold">Sair da conta</p>
-                <p className="text-xs opacity-70">Desconectar dispositivo</p>
-              </div>
-            </button>
-          </div>
         </div>
       </main>
     </div>
