@@ -30,6 +30,9 @@ const schema = z.object({
   endereco: z.string().trim().min(5, "Informe o endereço").max(200),
   complemento: z.string().trim().max(100).optional().or(z.literal("")),
   observacoes: z.string().trim().max(300).optional().or(z.literal("")),
+  forma_pagamento: z.enum(["PIX", "Débito", "Crédito", "Dinheiro"], {
+    errorMap: () => ({ message: "Selecione uma forma de pagamento" }),
+  }),
 });
 
 function Checkout() {
@@ -51,6 +54,7 @@ function Checkout() {
     endereco: "",
     complemento: "",
     observacoes: "",
+    forma_pagamento: "PIX",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -131,6 +135,8 @@ function Checkout() {
       observacoes: result.data.observacoes,
       subtotal: subtotal,
       total: subtotal,
+      forma_pagamento: result.data.forma_pagamento,
+      pagamento_confirmado: false,
     };
 
     const itens = items.map((item) => ({
@@ -249,6 +255,34 @@ function Checkout() {
                 className="w-full rounded-xl border bg-card px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
+
+            <h2 className="font-display text-lg font-semibold pt-2 border-t">
+              Forma de Pagamento
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {["PIX", "Débito", "Crédito", "Dinheiro"].map((metodo) => (
+                <button
+                  key={metodo}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, forma_pagamento: metodo }))}
+                  className={`flex h-11 items-center justify-center rounded-xl border text-sm font-medium transition ${
+                    form.forma_pagamento === metodo
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card hover:border-accent"
+                  }`}
+                >
+                  {metodo}
+                </button>
+              ))}
+            </div>
+            {form.forma_pagamento === "PIX" && (
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-sm">
+                <p className="font-medium text-accent">Pague com PIX</p>
+                <p className="text-xs mt-0.5 opacity-80">
+                  O QR Code será gerado pelo administrador após a confirmação do pedido.
+                </p>
+              </div>
+            )}
 
             <div className="flex flex-col gap-3 pt-4 sm:flex-row border-t">
               <Link
