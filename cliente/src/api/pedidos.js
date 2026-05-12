@@ -18,14 +18,31 @@ async function gerarNumeroPedido() {
 
 // Criar novo pedido
 export async function createPedido(pedidoData, itens) {
+  console.log('🔴 INICIANDO createPedido com:', pedidoData.forma_pagamento);
+  
   try {
     // 1. Gera número único
     const numeroPedido = await gerarNumeroPedido()
+    console.log('✅ Número gerado:', numeroPedido);
 
-    // 2. Insere o pedido
-    console.log('Dados do Pedido sendo enviados:', pedidoData)
-    console.log('Itens do Pedido:', itens)
+    // 2. Busca o ID da forma de pagamento pelo nome
+    console.log('🔍 Buscando forma_pagamento...');
+    const { data: formaPago, error: erroForm } = await supabase
+      .from('formas_pagamento')
+      .select('id')
+      .eq('nome', pedidoData.forma_pagamento)
+      .single()
 
+    console.log('📊 Resultado forma_pagamento:', { formaPago, erroForm });
+
+    if (erroForm) {
+      console.error('Erro ao buscar forma pagamento:', erroForm);
+      throw erroForm;
+    }
+
+    const formaPagamentoId = formaPago.id
+
+    // 3. Insere o pedido
     const { data: novoPedido, error: erroInsertPedido } = await supabase
       .from('pedidos')
       .insert([{
@@ -37,6 +54,11 @@ export async function createPedido(pedidoData, itens) {
         taxa_entrega: 0,
         desconto: 0,
         total: pedidoData.total || 0,
+        forma_pagamento: pedidoData.forma_pagamento, // Mantém backup em string
+        metodo_pagamento: pedidoData.forma_pagamento, // Backup legacy
+        forma_pagamento_id: formaPagamentoId, // NOVO: FK
+        status_pagamento: 'Pendente',
+        pagamento_confirmado: pedidoData.pagamento_confirmado || false,
         criado_em: new Date().toISOString()
       }])
       .select('id, numero_pedido, criado_em')

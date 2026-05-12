@@ -14,7 +14,7 @@ export const Route = createFileRoute("/checkout")({
   component: Checkout,
 });
 
-// Aplica máscara de telefone: (XX) 9XXXX-XXXX
+// Aplica máscara de telefone: (00) 00000-0000
 function maskPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
   if (digits.length <= 2) return digits.length ? `(${digits}` : "";
@@ -120,6 +120,8 @@ function Checkout() {
     }
     setErrors({});
 
+    console.log('Forma pagamento validada pelo Zod:', result.data.forma_pagamento);
+    
     // Salva telefone e endereço no banco
     const telefoneDigits = result.data.telefone.replace(/\D/g, "");
     await supabase
@@ -165,6 +167,7 @@ function Checkout() {
       },
       itens: items,
       total: subtotal,
+      forma_pagamento: result.data.forma_pagamento,
     });
 
     clear();

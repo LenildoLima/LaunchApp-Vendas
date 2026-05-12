@@ -4,6 +4,11 @@ import { formatBRL } from "@/store/cart";
 import { useOrder } from "@/store/order";
 import { Header } from "@/components/Header";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
+import { gerarPayloadPix } from "@/lib/pix";
+import { useEffect, useState } from "react";
+import supabase from "@/api/supabaseClient";
+import { QrCode, Copy as CopyIcon } from "lucide-react";
 
 export const Route = createFileRoute("/sucesso")({
   component: Success,
@@ -11,6 +16,36 @@ export const Route = createFileRoute("/sucesso")({
 
 function Success() {
   const order = useOrder((s) => s.last);
+  const [pixPayload, setPixPayload] = useState("");
+  const [config, setConfig] = useState({ chave_pix: "", nome_loja: "" });
+
+  useEffect(() => {
+    async function loadConfig() {
+      if (!order) return;
+      const { data } = await supabase
+        .from("configuracoes")
+        .select("chave, valor")
+        .in("chave", ["chave_pix", "nome_loja"]);
+      
+      if (data) {
+        const mapped: any = {};
+        data.forEach((item: any) => (mapped[item.chave] = item.valor));
+        setConfig(mapped);
+
+        if (order.forma_pagamento === "PIX" && mapped.chave_pix) {
+          const payload = gerarPayloadPix({
+            chave: mapped.chave_pix,
+            valor: order.total,
+            nome: mapped.nome_loja || "Loja",
+            txid: order.numero.replace(/\D/g, "").substring(0, 20) || "***",
+          });
+          setPixPayload(payload);
+        }
+      }
+    }
+    loadConfig();
+  }, [order]);
+
   if (!order) return <Navigate to="/" />;
 
   const data = new Date(order.criadoEm).toLocaleString("pt-BR");
@@ -54,6 +89,50 @@ function Success() {
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{data}</p>
           </div>
+
+          {pixPayload && (
+            <div className="mt-8 flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-accent/30 bg-accent/5 p-6 animate-in fade-in zoom-in duration-500">
+              <div className="flex items-center gap-2 text-accent">
+                <QrCode className="h-5 w-5" />
+                <h2 className="font-display font-bold">Pague com PIX</h2>
+              </div>
+              
+              <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+                <QRCodeSVG value={pixPayload} size={200} level="M" />
+              </div>
+
+              <div className="w-full space-y-3">
+                <p className="text-center text-xs text-muted-foreground">
+                  Escaneie o código acima ou copie o código abaixo:
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 overflow-hidden rounded-xl border bg-card p-3">
+                    <p className="truncate font-mono text-[10px] opacity-70">
+                      {pixPayload}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(pixPayload);
+                      toast.success("Código PIX copiado!");
+                    }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                    aria-label="Copiar PIX"
+                  >
+                    <CopyIcon className="h-4 w-4" />
+                   </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-full bg-accent/10 px-4 py-1.5 text-[10px] font-medium text-accent">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+                </span>
+                Aguardando pagamento...
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
             <section>

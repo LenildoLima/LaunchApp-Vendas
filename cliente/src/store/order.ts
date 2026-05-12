@@ -13,6 +13,7 @@ export interface OrderData {
   };
   itens: CartItem[];
   total: number;
+  forma_pagamento: string;
 }
 
 interface OrderState {
