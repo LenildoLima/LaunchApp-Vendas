@@ -1,0 +1,23 @@
+{
+  "name": "LaunchApp Vendas Cliente",
+  "short_name": "LaunchApp Cliente",
+  "description": "Sistema de Vendas Online (Catálogo)",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
