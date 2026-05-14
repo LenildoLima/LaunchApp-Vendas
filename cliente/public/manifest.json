@@ -1,7 +1,7 @@
 {
-  "name": "LaunchApp Vendas Cliente",
-  "short_name": "LaunchApp Cliente",
-  "description": "Sistema de Vendas Online (Catálogo)",
+  "name": "SkyFlow",
+  "short_name": "SkyFlow",
+  "description": "Sistema de Vendas Profissional",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

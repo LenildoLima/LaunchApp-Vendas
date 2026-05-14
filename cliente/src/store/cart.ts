@@ -73,7 +73,7 @@ export const useCart = create<CartState>()(
       count: () => get().items.reduce((a, i) => a + i.quantidade, 0),
       subtotal: () => get().items.reduce((a, i) => a + i.quantidade * i.preco, 0),
     }),
-    { name: "novalia-cart" }
+    { name: "skyflow-cart" }
   )
 );
 

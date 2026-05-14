@@ -229,7 +229,7 @@ function Index() {
 
       <footer className="mt-16 border-t bg-card">
         <div className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-muted-foreground sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} Novalia · Todos os direitos reservados
+          © {new Date().getFullYear()} SkyFlow · Todos os direitos reservados
         </div>
       </footer>
 

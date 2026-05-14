@@ -18,9 +18,9 @@ export default defineConfig({
       VitePWA({
         registerType: 'autoUpdate',
         manifest: {
-          name: 'LaunchApp Vendas Cliente',
-          short_name: 'LaunchApp Cliente',
-          description: "Sistema de Vendas Online (Catálogo)",
+          name: 'SkyFlow',
+          short_name: 'SkyFlow',
+          description: "Sistema de Vendas Profissional",
           theme_color: '#0a0a0f',
           icons: [
             {
